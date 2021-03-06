@@ -17,11 +17,18 @@ class HomeTableViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        loadTweets()
         
         tweetRefreshControl.addTarget(self, action: #selector(loadTweets), for: .valueChanged)
         tableView.refreshControl = tweetRefreshControl
         
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 150
+        
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        loadTweets()
     }
 
     @objc func loadTweets() {
@@ -72,9 +79,29 @@ class HomeTableViewController: UITableViewController {
         cell.tweetContent.text = tweetArray[indexPath.row]["text"] as? String
         cell.usernameLabel.text = user["name"] as? String
         
+        // Get date posted
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "EEE MMM d HH:mm:ss Z y"
+        let date = dateFormatter.date(from: tweetArray[indexPath.row]["created_at"] as! String)
+        
+        if #available(iOS 13.0, *) {
+            let formatter = RelativeDateTimeFormatter()
+            formatter.unitsStyle = .full
+
+            let relativeDate = formatter.localizedString(for: date!, relativeTo: Date())
+            cell.timePostedLabel.text = relativeDate
+        } else {
+            cell.timePostedLabel.text = ""
+        }
+        
         if let imageData = try? Data(contentsOf: URL(string: ((user["profile_image_url_https"] as? String)!))!) {
             cell.profileImage.image = UIImage(data: imageData)
         }
+        
+        cell.setFavorite(tweetArray[indexPath.row]["favorited"] as! Bool)
+        cell.setRetweeted(tweetArray[indexPath.row]["retweeted"] as! Bool)
+        
+        cell.tweetId = tweetArray[indexPath.row]["id"] as! Int
         
         return cell
     }
